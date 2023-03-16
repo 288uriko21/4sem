@@ -4,6 +4,8 @@
 #include <string.h>
 #include <vector>
 #include <algorithm>
+#include <unordered_map>
+#include <set>
 using namespace std;
 
 // class graph {
@@ -26,13 +28,125 @@ Graph::Graph()
 	color = color_init;
 }
 
+WeightedGraph::WeightedGraph(const Graph &G) : Graph(G)
+{
+	int w;
+	this->adjacencyTablePro = (Arc **)malloc(this->Vertexnumb * sizeof(Arc *));
+	for (int i = 0; i < this->Vertexnumb; ++i)
+	{
+		this->adjacencyTablePro[i] = (Arc *)malloc(this->Vertexnumb * sizeof(Arc));
+		for (int j = 0; j < this->Vertexnumb; ++j)
+		{
+			if (this->adjacencyTable[i][j] != NULL)
+			{
+				cout << "Input weight of arc " << this->adjacencyTable[i][j] << " ";
+				cin >> w;
+				Arc a(this->adjacencyTable[i][j], w);
+				// cout << a.info << endl;
+				adjacencyTablePro[i][j] = a;
+			}
+			else
+			{
+				Arc a("-", 1000000000);
+				adjacencyTablePro[i][j] = a;
+			}
+		}
+	}
+}
+
+void WeightedGraph::MSTfinderPrim()
+{
+	// входные данные
+	int n = Vertexnumb;
+	// vector<vector<int>> g;
+	const int INF = 1000000000; // значение "бесконечность"
+
+	// алгоритм
+	vector<bool> used(n, false);
+	vector<int> min_e(n, INF), sel_e(n, -1);
+	min_e[0] = 0;
+	for (int i = 0; i < n; ++i)
+	{
+		int v = -1;
+		for (int j = 0; j < n; ++j)
+			if (!used[j] && (v == -1 || min_e[j] < min_e[v]))
+				v = j;
+		if (min_e[v] == INF)
+		{
+			cout << "No MST!";
+			return;
+		}
+
+		used[v] = true;
+		if (sel_e[v] != -1)
+			cout << /*vertex[v] << " " << vertex[sel_e[v]] << " " */ adjacencyTable[sel_e[v]][v] << endl;
+
+		for (int to = 0; to < n; ++to)
+			if ((adjacencyTablePro[v][to]).weight < min_e[to])
+			{
+				min_e[to] = (adjacencyTablePro[v][to]).weight;
+				sel_e[to] = v;
+			}
+	}
+}
+
+Arc::Arc(char *info, int weight)
+{
+	int inflen = 0;
+	this->weight = weight;
+	for (; info[inflen] != '\0'; ++inflen)
+		;
+	this->info = (char *)malloc((inflen + 1) * (sizeof(char)));
+	strcpy(this->info, info);
+}
+
+Arc &Arc::operator=(const Arc &G)
+{
+	// free(info);
+	int namelen = 0;
+	for (; G.info[namelen] != '\0'; ++namelen)
+		;
+	info = (char *)malloc((namelen + 1) * sizeof(char));
+	strcpy(info, G.info);
+	// cout << namelen << endl;
+	weight = G.weight;
+
+	return *this;
+}
+
+Arc::Arc(const Arc &G)
+{
+	int namelen = 0;
+	for (; G.info[namelen] != '\0'; ++namelen)
+		;
+	info = (char *)malloc((namelen + 1) * sizeof(char));
+	strcpy(info, G.info);
+	// cout << namelen << endl;
+	weight = G.weight;
+}
+
+Arc::~Arc()
+{
+	free(info);
+}
+
 Graph::~Graph() //!
 {
 	for (int i = 0; i < this->Vertexnumb; ++i)
 		for (int j = 0; j < this->Vertexnumb; ++j)
 			free((this->adjacencyTable)[i][j]);
 
-	free(this->adjacencyTable);
+	if (this->adjacencyTable != NULL)
+		free(this->adjacencyTable);
+}
+
+WeightedGraph::~WeightedGraph()
+{
+	for (int i = 0; i < this->Vertexnumb; ++i)
+		free((this->adjacencyTablePro)[i]);
+
+	if (this->adjacencyTablePro != NULL)
+		free(this->adjacencyTablePro);
 }
 
 ostream &operator<<(ostream &output, const Graph &A)
@@ -47,6 +161,26 @@ ostream &operator<<(ostream &output, const Graph &A)
 		for (int j = 0; j < A.Vertexnumb; ++j)
 			if (A.adjacencyTable[i][j] != NULL)
 				output << "(" << A.vertex[i] << ", " << A.adjacencyTable[i][j] << ", " << A.vertex[j] << ") ";
+
+	output << "\n";
+
+	return output;
+}
+
+ostream &operator<<(ostream &output, const WeightedGraph &A)
+{
+	output << "Vertex List: ";
+	for (int i = 0; i < A.Vertexnumb; ++i)
+		output << A.vertex[i] << " ";
+	output << "\n";
+	output << "Arcs List: ";
+
+	for (int i = 0; i < A.Vertexnumb; ++i)
+		for (int j = 0; j < A.Vertexnumb; ++j)
+			if (A.adjacencyTable[i][j] != NULL)
+				output << "(" << A.vertex[i] << ", "
+					   << " [" << (A.adjacencyTablePro[i][j]).info << ", " << (A.adjacencyTablePro[i][j]).weight << "]"
+					   << ", " << A.vertex[j] << ") ";
 
 	output << "\n";
 
@@ -459,4 +593,124 @@ void Graph::AllWaysFinder(char vertex1, char vertex2)
 	used.clear();
 	color.clear();
 	cout << endl;
+}
+
+bool Graph::Cdfs(int v)
+{
+	cl[v] = 1;
+	for (size_t i = 0; i < graph[v].size(); ++i)
+	{
+		if (graph[v][i] == 1)
+		{
+			int to = i;
+			if (cl[to] == 0)
+			{
+				p[to] = v;
+				if (Cdfs(to))
+					return true;
+			}
+			else if (cl[to] == 1)
+			{
+				cycle_end = v;
+				cycle_st = to;
+				return true;
+			}
+		}
+	}
+	cl[v] = 2;
+	return false;
+}
+
+void Graph::Cyclic()
+{
+	int n = this->Vertexnumb;
+
+	for (int i = 0; i < n; ++i)
+		for (int j = 0; j < n; ++j)
+			if (this->adjacencyTable[i][j] != NULL)
+				graph[i][j] = 1;
+			else
+				graph[i][j] = 0;
+
+	p.assign(n, -1);
+	cl.assign(n, 0);
+	cycle_st = -1;
+	for (int i = 0; i < n; ++i)
+		if (Cdfs(i))
+			break;
+
+	if (cycle_st == -1)
+		puts("Acyclic");
+	else
+	{
+		puts("Cyclic");
+		vector<int> cycle;
+		cycle.push_back(cycle_st);
+		for (int v = cycle_end; v != cycle_st; v = p[v])
+			cycle.push_back(v);
+		cycle.push_back(cycle_st);
+		reverse(cycle.begin(), cycle.end());
+		for (size_t i = 0; i < cycle.size(); ++i)
+			printf("%c ", /*cycle[i] + 1*/ vertex[cycle[i]]);
+	}
+	cout << endl;
+
+	p.clear();
+	cl.clear();
+}
+
+void WeightedGraph::Color()
+{
+	int n = Vertexnumb;
+	string color[] =
+		{
+			"", "BLUE", "GREEN", "RED", "YELLOW", "ORANGE", "PINK",
+			"BLACK", "BROWN", "WHITE", "PURPLE", "VOILET", "GRAY"};
+
+
+	unordered_map<int, int> result;
+
+	for (int u = 0; u < n; u++)
+	{
+		// устанавливаем для хранения цвета смежных вершин `u`
+		set<int> assigned;
+
+		// проверяем цвета смежных вершин `u` и сохраняем их в наборе
+		// for (int i : graph.adjList[u])
+		// {
+		// 	if (result[i])
+		// 	{
+		// 		assigned.insert(result[i]);
+		// 	}
+		// }
+
+		for (int i = 0; i < Vertexnumb; ++i)
+		{
+			if (adjacencyTable[u][i] != NULL || adjacencyTable[i][u] != NULL)
+				if (result[i])
+				{
+					assigned.insert(result[i]);
+				}
+		}
+
+		// проверяем первый свободный цвет
+		int color = 1;
+		for (auto &c : assigned)
+		{
+			if (color != c)
+			{
+				break;
+			}
+			color++;
+		}
+
+		// назначаем вершине `u` первый доступный цвет
+		result[u] = color;
+	}
+
+	for (int v = 0; v < n; v++)
+	{
+		cout << "The color assigned to vertex " << vertex[v] << " is "
+			 << color[result[v]] << endl;
+	}
 }

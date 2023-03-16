@@ -9,6 +9,7 @@ using namespace std;
 
 class Graph
 {
+protected:
     char *vertex;
     char ***adjacencyTable;
     int Vertexnumb;
@@ -48,6 +49,8 @@ public:
 
     void AllWaysFinder(char vertex1, char vertex2);
 
+    void Cyclic();
+
 private:
     vector<vector<int>> g, gr;
     vector<vector<int>> graph;
@@ -55,32 +58,46 @@ private:
     vector<int> order, component;
     vector<int> color;
     vector<char> way;
+    vector<char> cl;
+    vector<int> p;
+    int cycle_st, cycle_end;
 
     void dfs2(int v);
 
     void dfs1(int v);
 
     void dfs(int v, char vertex2, int beg);
+
+    bool Cdfs(int v);
 };
 
-// class Arc
-// {
-//     friend class Graph;
-//     char out;
-//     char in;
-//     char *value;
+struct Arc
+{
+    char *info;
+    int weight;
 
-// public:
-//     Arc(char* value);
+    Arc(char *info, int weight);
 
-//     friend ostream &operator<<(ostream &output, const Arc &A);
+    Arc(const Arc &G);
 
-// };
+    Arc & operator = (const Arc & B);
 
-// class Vertex
-// {
-//     int numb;
-//     char value;
+    ~Arc();
+};
 
-//     Vertex(char *vertex);
-// };
+class WeightedGraph : public Graph
+{
+protected:
+    Arc **adjacencyTablePro;
+
+public:
+    WeightedGraph(const Graph &G);
+
+    void MSTfinderPrim();
+
+    void Color();
+
+    ~WeightedGraph();
+
+    friend ostream &operator<<(ostream &output, const WeightedGraph &G);
+};
