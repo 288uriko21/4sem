@@ -6,19 +6,18 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <signal.h>
-#define BUFSIZE 1024    // размер буфера
-#define QUEUE_SIZE 5    // максимальный размер очереди запросов
-#define MAX_CLIENT 8    // нужно поменять на 8
-#define MAX_USERNAME 30 // максимальная длина имени пользователя
+#define BUFSIZE 1024   
+#define QUEUE_SIZE 5    
+#define MAX_CLIENT 8    
+#define MAX_USERNAME 30 
 int fd[2], clients = 0, socket1, fd2[2];
-char users[MAX_CLIENT][MAX_USERNAME] = {0}; // массив для хранения имён клиентов
+char users[MAX_CLIENT][MAX_USERNAME] = {0}; 
 
-/*функция-обработчик для сына*/
-void SHandler(int s)
+
+void SonHandler(int s)
 {
   char bbuf[BUFSIZE];
   read(fd[0], bbuf, BUFSIZE);
-  fprintf(stderr, "Сын получил %s\n", bbuf);
   send(socket1, bbuf, BUFSIZE, 0);
   /*отсылаю в сокет*/
   return;
@@ -42,8 +41,8 @@ void SHandler(int s)
 //   return;
 // }
 
-/*функция, распознающая запрос \users */
-int IfUsers(char *s)
+
+int recogUsers(char *s)
 {
   char *str;
   if ((str = strchr(s, ':')) == NULL)
@@ -53,7 +52,7 @@ int IfUsers(char *s)
   return 0;
 }
 
-int IfUsershelp(char *s)
+int recogUsershelp(char *s)
 {
   char *str;
   if ((str = strchr(s, ':')) == NULL)
@@ -63,7 +62,6 @@ int IfUsershelp(char *s)
   return 0;
 }
 
-/*функция, зануляющая строку с именем */
 void StrNull(char *s)
 {
   int i;
@@ -72,18 +70,8 @@ void StrNull(char *s)
   return;
 }
 
-void PrintUsers(void)
-{
-  int i;
-  fprintf(stderr, "СПИСОК ПОЛЬЗОВАТЕЛЕЙ\n");
-  for (i = 0; i < MAX_CLIENT; i++)
-    if (strlen(users[i]) > 0)
-      printf("%s\n", users[i]);
-  return;
-}
 
-/*функция, распознающая \quit */
-int IfQuit(char *s)
+int recogQuit(char *s)
 {
   int i = 0;
   char *str;
@@ -94,8 +82,7 @@ int IfQuit(char *s)
   return 0;
 }
 
-/*функция, распознающая входное сообщение*/
-int IfEnter(char *s)
+int recogEnter(char *s)
 {
   if (strchr(s, ':') == NULL)
   {
@@ -114,16 +101,16 @@ int IfPrivate(char *s)
 
 /////////////////////////////////////////////////////////////////////////
 
-/*функция-обработчик для отца(выполнение quit, users, mssg)*/
+
 void PHandler(int s)
 {
   char bbuf[BUFSIZE];
   int j, length, i = 0;
   char usname[BUFSIZE] = {0};
   read(fd[0], bbuf, BUFSIZE);
-  fprintf(stderr, "Отец получил %s\n", bbuf);
+  
 
-  if (IfQuit(bbuf))
+  if (recogQuit(bbuf))
   {
 
     clients--;
@@ -145,12 +132,12 @@ void PHandler(int s)
       }
       i++;
     }
-    // PrintUsers();
-    // fprintf(stderr, "Количество клиентов %d\n", clients);
+
+
     length = strlen("\\quit") + 2;
-    strcat(usname, " leave the chat with message:"); /*объединение имя+выход*/
+    strcat(usname, " leave the chat with message:"); 
     strcat(usname, bbuf + j + length);
-    // fprintf(stderr,"Будет отправлено %s\n",usname);
+ 
     for (j = 0; j < clients; j++)
     {
       write(fd[1], usname, BUFSIZE);
@@ -159,7 +146,7 @@ void PHandler(int s)
 
   else
 
-      if (IfEnter(bbuf))
+      if (recogEnter(bbuf))
   {
     while (bbuf[i] != ' ')
     {
@@ -217,14 +204,12 @@ void PHandler(int s)
     //   }
     //   i++;
     // }
-    // fprintf(stderr, "Количество клиентов %d\n", clients);
-    // PrintUsers();
-    // fprintf(stderr,"Будет отправлено %s\n",bbuf);
+
   }
 
   else
 
-      if (IfUsers(bbuf))
+      if (recogUsers(bbuf))
   {
 
     strcpy(bbuf, "users online: ");
@@ -237,13 +222,13 @@ void PHandler(int s)
       }
       i++;
     }
-    // fprintf(stderr,"Будет отправлено %s\n",bbuf);
+
     for (j = 0; j < clients; j++)
       write(fd[1], bbuf, BUFSIZE);
   }
   else
   {
-    if (IfUsershelp(bbuf))
+    if (recogUsershelp(bbuf))
     {
       strcpy(bbuf, "!");
       while (i < MAX_CLIENT)
@@ -261,7 +246,6 @@ void PHandler(int s)
     }
     else
     {
-      fprintf(stderr, "Будет отправлено %s\n", bbuf);
       for (j = 0; j < clients; j++)
         write(fd[1], bbuf, BUFSIZE);
     }
@@ -271,11 +255,11 @@ void PHandler(int s)
 }
 
 /////////////////////////////////////////////////////////////////////////
-/*функция-обработчик для завершения работы сервера*/
+
 void SigintHandler(int s)
 {
   char bbuf[] = "###server is shouting down, thanks to everyone\0";
-  send(socket1, bbuf, strlen(bbuf) + 1, 0); /*отсылаю в сокет*/
+  send(socket1, bbuf, strlen(bbuf) + 1, 0); 
   _exit(0);
 }
 
@@ -287,45 +271,44 @@ int main(int argc, char **argv)
 
   if (argc < 2)
   {
-    fprintf(stderr, "Необходимо указать номер порта в параметрах\n");
+    fprintf(stderr, "You must specify the port number in the parameters\n");
     return 1;
   }
 
-  listener = socket(AF_INET, SOCK_STREAM, 0); /*создаю сокет слушателя(дескриптор сокета)*/
+  listener = socket(AF_INET, SOCK_STREAM, 0); 
   if (listener < 0)
   {
     perror("socket");
     exit(1);
   }
 
-  sscanf(argv[1], "%d", &port);             /*считываю номер порта*/
-  addr.sin_family = AF_INET;                /*выбор домена(для взаимодействия в рамках сети)[указываю через структуру AF_INET]*/
-  addr.sin_port = htons(port);              /*выбор порта(hton+ переводят данные из узлового порядка расположения байтов в сетевой и наоборот)*/
-  addr.sin_addr.s_addr = htonl(INADDR_ANY); /*выбор ip-адреса(все интерфейсы)*/
+  sscanf(argv[1], "%d", &port);             
+  addr.sin_family = AF_INET;                
+  addr.sin_port = htons(port);          
+  addr.sin_addr.s_addr = htonl(INADDR_ANY); 
 
   if (bind(listener, (struct sockaddr *)&addr, sizeof(addr)) < 0)
-  { /*связываю сокет слушателя с портом*/
+  {
     perror("bind");
     exit(2);
   }
 
-  listen(listener, QUEUE_SIZE); /*делаем сокет слушающим(сокетов готов принимать запросы(5 максимум))*/
+  listen(listener, QUEUE_SIZE); 
   fprintf(stderr, "%s", "server start\n");
 
   pipe(fd);
   pipe(fd2);
 
-  /*начинается обработка запросов на соединение*/
 
   while (1)
   {
 
     if (clients < MAX_CLIENT)
     {
-      sock = accept(listener, NULL, NULL); /*возвращает дескриптор сокета взаимодействия; т.к. адрес клиента не интересует - NULL*/
+      sock = accept(listener, NULL, NULL); 
       if (sock < 0)
       {
-        perror("accept");
+        perror("accept error");
         exit(3);
       }
       clients++;
@@ -333,33 +316,32 @@ int main(int argc, char **argv)
 
     else
     {
-      /*fprintf(stderr, "Server is full");*/
       continue;
     }
 
     switch (fork())
     {
 
-    case -1: /*ошибка*/
+    case -1: 
       perror("fork");
       break;
 
-    case 0:            /*сын(обрабатывает запрос и посылает ответ)*/
-      close(listener); /*сокет сыну не нужен*/
+    case 0:          
+      close(listener); 
       socket1 = sock;
-      signal(SIGUSR2, SHandler);     /*обработчик для сына*/
-      signal(SIGINT, SigintHandler); /*обработчик завершения работы серва*/
+      signal(SIGUSR2, SonHandler);     
+      signal(SIGINT, SigintHandler);
       signal(SIGUSR1, SIG_IGN);
       // signal(SIGALRM, handlername);
 
       while (1)
       {
-        recv(socket1, buf, BUFSIZE, 0); /*получение данных из сокета*/
-        fprintf(stderr, "Получил:%s\n", buf);
-        write(fd[1], buf, BUFSIZE); /*запись этого в пайп*/
+        recv(socket1, buf, BUFSIZE, 0); 
+        fprintf(stderr, "GET:%s\n", buf);
+        write(fd[1], buf, BUFSIZE); 
 
         if (IfQuit(buf))
-        { /*при встрече \quit */
+        { 
           kill(getppid(), SIGUSR1);
           break;
         }
@@ -367,12 +349,10 @@ int main(int argc, char **argv)
         kill(getppid(), SIGUSR1);
       }
 
-      _exit(0); /*завершение клиента с закрытием дескрипторов(chld завершены)*/
 
-    default: /*отец*/
+    default: 
       signal(SIGUSR2, SIG_IGN);
       signal(SIGUSR1, PHandler);
-      // signal(SIGALRM, SIG_IGN);
     }
   }
   close(listener);
