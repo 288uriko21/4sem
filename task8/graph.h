@@ -31,7 +31,7 @@ public:
 
     friend ostream &operator<<(ostream &output, const Graph &G); //
 
-    friend Graph &operator+(const Graph &G, const Graph &D); //                                       ?????????????
+    friend Graph operator+(const Graph &G, const Graph &D); //                                       ?????????????
 
     Graph &operator-(char vertex); ///
 

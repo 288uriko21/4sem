@@ -497,8 +497,36 @@ Graph::Graph(const Graph &G)
 				this->adjacencyTable[i][j] = NULL;
 }
 
-Graph &operator+(const Graph &G, const Graph &D)
+Graph operator+(const Graph &G, const Graph &D)
 {
+	Graph Res = G;
+
+	for (int i = 0; i < D.Vertexnumb; ++i)
+	{
+		char addSimb = D.vertex[i];
+		bool Vnew = true;
+		for (int j = 0; j < G.Vertexnumb; ++j)
+			if (G.vertex[j] == addSimb)
+			{
+				Vnew = false;
+				break;
+			}
+		if (Vnew)
+			Res.add(addSimb);
+	}
+	//cout << "1" << endl;
+	for (int i = 0; i < D.Vertexnumb; ++i)
+		for (int j = 0; j < D.Vertexnumb; ++j)
+			if (D.adjacencyTable[i][j] != NULL)
+			{
+				int IR1 = 0;
+				int IR2 = 0;
+				Res.FindVertexIndex(D.vertex[i], D.vertex[j], IR1, IR2);
+				if (Res.adjacencyTable[IR1][IR2] == NULL)
+					Res.add(D.vertex[i], D.adjacencyTable[i][j], D.vertex[j]);
+			}
+	//cout << Res;
+	return Res;
 }
 
 Graph &Graph::operator-(char vertex)
@@ -556,16 +584,6 @@ void Graph::dfs(int v, char vertex2, int beg)
 	colored.clear();
 	used.pop_back();
 }
-
-// void dfs (int v) {
-// 	time_in[v] = dfs_timer++;
-// 	color[v] = 1;
-// 	for (vector<int>::iterator i=g[v].begin(); i!=g[v].end(); ++i)
-// 		if (color[*i] == 0)
-// 			dfs (*i);
-// 	color[v] = 2;
-// 	time_out[v] = dfs_timer++;
-// }
 
 void Graph::AllWaysFinder(char vertex1, char vertex2)
 {
@@ -667,22 +685,12 @@ void WeightedGraph::Color()
 			"", "BLUE", "GREEN", "RED", "YELLOW", "ORANGE", "PINK",
 			"BLACK", "BROWN", "WHITE", "PURPLE", "VOILET", "GRAY"};
 
-
 	unordered_map<int, int> result;
 
 	for (int u = 0; u < n; u++)
 	{
-		// устанавливаем для хранения цвета смежных вершин `u`
 		set<int> assigned;
 
-		// проверяем цвета смежных вершин `u` и сохраняем их в наборе
-		// for (int i : graph.adjList[u])
-		// {
-		// 	if (result[i])
-		// 	{
-		// 		assigned.insert(result[i]);
-		// 	}
-		// }
 
 		for (int i = 0; i < Vertexnumb; ++i)
 		{
@@ -693,7 +701,6 @@ void WeightedGraph::Color()
 				}
 		}
 
-		// проверяем первый свободный цвет
 		int color = 1;
 		for (auto &c : assigned)
 		{
@@ -704,7 +711,7 @@ void WeightedGraph::Color()
 			color++;
 		}
 
-		// назначаем вершине `u` первый доступный цвет
+		
 		result[u] = color;
 	}
 
