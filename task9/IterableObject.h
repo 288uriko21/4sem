@@ -4,9 +4,10 @@
 template <typename T>
 class IterableObject
 {
-protected:
-    int size;
+//protected:
+    
 
 public:
+    int size;
     virtual bool contains(T elem) = 0;
 };
